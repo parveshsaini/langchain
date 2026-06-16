@@ -68,6 +68,14 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = merge_lists(merged[right_k], right_v)
             elif merged[right_k] == right_v:
                 continue
+            elif isinstance(merged[right_k], bool):
+                # `bool` is a subclass of `int`, so this branch must precede the
+                # `int` branch below. Without it, differing booleans would fall
+                # through to `+=` and be summed (e.g. `True + False` -> `1`),
+                # silently changing the value's type from `bool` to `int`. Use
+                # last-wins, consistent with the temporal/identification `int`
+                # fields handled below.
+                merged[right_k] = right_v
             elif isinstance(merged[right_k], int):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
